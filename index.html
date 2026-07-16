@@ -5,9 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#050B14" />
     <title>Chord Master</title>
+    <script>
+      // GitHub Pages may temporarily serve the repository root when Pages is
+      // configured for branch deployment. Send that configuration to the
+      // committed production build instead of trying to execute JSX directly.
+      if (!window.location.pathname.endsWith('/dist/') && !window.location.pathname.includes('/dist/')) {
+        window.location.replace(new URL('./dist/', window.location.href));
+      }
+    </script>
   </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+  <body style="margin:0;background:#050B14;color:#cbd5e1;font-family:system-ui,sans-serif;display:grid;min-height:100vh;place-items:center">
+    <p>Loading Chord Master…</p>
   </body>
 </html>
