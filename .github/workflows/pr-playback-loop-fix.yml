@@ -36,9 +36,13 @@ jobs:
           start = script.index('play_button = """')
           end_marker = 'app = replace_once(app, play_button, play_with_loop, "loop control")'
           end = script.index(end_marker, start) + len(end_marker)
-          replacement = '''tempo_marker = """              <label className="flex flex-col">
-                <span className="mb-1.5 text-[10px] font-bold tracking-widest text-cyan-300 md:text-xs">TEMPO: {tempo} BPM</span>"""
-          tempo_with_loop = """              <button
+          replacement = '''tempo_text_index = app.index('TEMPO: {tempo} BPM')
+          label_marker = '<label className="flex flex-col">'
+          label_index = app.rfind(label_marker, 0, tempo_text_index)
+          if label_index < 0:
+              raise RuntimeError('Could not locate the tempo control label')
+          line_start = app.rfind('\\n', 0, label_index) + 1
+          loop_button = """              <button
                 type="button"
                 onClick={toggleLoop}
                 disabled={phase !== PRACTICE_PHASES.IDLE}
@@ -49,9 +53,8 @@ jobs:
                 <Repeat2 className="h-4 w-4" />
                 LOOP
               </button>
-              <label className="flex flex-col">
-                <span className="mb-1.5 text-[10px] font-bold tracking-widest text-cyan-300 md:text-xs">TEMPO: {tempo} BPM</span>"""
-          app = replace_once(app, tempo_marker, tempo_with_loop, "loop control")'''
+"""
+          app = app[:line_start] + loop_button + app[line_start:]'''
           path.write_text(script[:start] + replacement + script[end:])
           PY
           set +e
