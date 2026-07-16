@@ -28,6 +28,32 @@ jobs:
         run: |
           sed -n "/python - <<'PY'/,/^          PY$/p" .github/workflows/apply-playback-loop-fix.yml \
             | sed '1d;$d;s/^          //' > /tmp/apply-playback-fix.py
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('/tmp/apply-playback-fix.py')
+          script = path.read_text()
+          start = script.index('play_button = """')
+          end_marker = 'app = replace_once(app, play_button, play_with_loop, "loop control")'
+          end = script.index(end_marker, start) + len(end_marker)
+          replacement = '''tempo_marker = """              <label className="flex flex-col">
+                <span className="mb-1.5 text-[10px] font-bold tracking-widest text-cyan-300 md:text-xs">TEMPO: {tempo} BPM</span>"""
+          tempo_with_loop = """              <button
+                type="button"
+                onClick={toggleLoop}
+                disabled={phase !== PRACTICE_PHASES.IDLE}
+                aria-pressed={loopEnabled}
+                aria-label={loopEnabled ? 'Disable progression loop' : 'Enable progression loop'}
+                className={`flex h-12 items-center gap-2 rounded-2xl border px-3 text-[10px] font-black tracking-widest transition disabled:cursor-not-allowed disabled:opacity-50 md:h-14 ${loopEnabled ? 'border-cyan-300 bg-cyan-400/20 text-cyan-200 shadow-[0_0_16px_rgba(34,211,238,0.25)]' : 'border-cyan-800/60 bg-slate-950/30 text-slate-400 hover:border-cyan-500 hover:text-cyan-200'}`}
+              >
+                <Repeat2 className="h-4 w-4" />
+                LOOP
+              </button>
+              <label className="flex flex-col">
+                <span className="mb-1.5 text-[10px] font-bold tracking-widest text-cyan-300 md:text-xs">TEMPO: {tempo} BPM</span>"""
+          app = replace_once(app, tempo_marker, tempo_with_loop, "loop control")'''
+          path.write_text(script[:start] + replacement + script[end:])
+          PY
           set +e
           python /tmp/apply-playback-fix.py > /tmp/playback-fix-output.txt 2>&1
           status=$?
