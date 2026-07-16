@@ -5,6 +5,8 @@ const defaults = {
   purchasedPacks: [],
 };
 
+const PLAN_RANK = { free: 0, plus: 1, pro: 2 };
+
 export const loadEntitlements = () => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -22,14 +24,19 @@ export const saveEntitlements = (entitlements) => {
   }
 };
 
-export const canUsePremiumAccess = (entitlements) => ['plus', 'pro'].includes(entitlements.plan);
+export const hasPlan = (entitlements, requiredPlan = 'free') =>
+  (PLAN_RANK[entitlements.plan] ?? 0) >= (PLAN_RANK[requiredPlan] ?? 0);
 
-export const canAccessPreset = (access, entitlements) => {
-  if (access === 'free') return true;
+export const canUsePremiumAccess = (entitlements) => hasPlan(entitlements, 'plus');
+
+export const canAccessRequirement = (access, entitlements) => {
+  if (!access || access === 'free') return true;
+  if (access === 'plus' || access === 'pro') return hasPlan(entitlements, access);
   if (entitlements.plan === 'pro') return true;
-  if (access === 'plus') return entitlements.plan === 'plus';
-  return entitlements.plan === 'plus' || entitlements.purchasedPacks.includes(access);
+  return entitlements.purchasedPacks.includes(access);
 };
+
+export const canAccessPreset = canAccessRequirement;
 
 export const mockPurchasePlan = (entitlements, plan) => {
   const next = { ...entitlements, plan };
