@@ -19,11 +19,28 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
 
+      - name: Configure commit identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
       - name: Extract and run repair script
         run: |
           sed -n "/python - <<'PY'/,/^          PY$/p" .github/workflows/apply-playback-loop-fix.yml \
             | sed '1d;$d;s/^          //' > /tmp/apply-playback-fix.py
-          python /tmp/apply-playback-fix.py
+          set +e
+          python /tmp/apply-playback-fix.py > /tmp/playback-fix-output.txt 2>&1
+          status=$?
+          set -e
+          cat /tmp/playback-fix-output.txt
+          if [ "$status" -ne 0 ]; then
+            cp /tmp/playback-fix-output.txt .playback-loop-fix-error.txt
+            git add .playback-loop-fix-error.txt
+            git commit -m "Record playback repair validation error" || true
+            git push origin HEAD:${{ github.head_ref }}
+            exit "$status"
+          fi
+          rm -f .playback-loop-fix-error.txt
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -43,8 +60,6 @@ jobs:
 
       - name: Commit repair to pull request branch
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/App.jsx src/lib/audio.js
+          git add src/App.jsx src/lib/audio.js .playback-loop-fix-error.txt
           git commit -m "Add progression looping and repair demo audio"
           git push origin HEAD:${{ github.head_ref }}
