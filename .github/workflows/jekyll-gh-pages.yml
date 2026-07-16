@@ -27,8 +27,13 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Normalize package registry URLs
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          sed -i 's#https://packages.applied-caas-gateway1.internal.api.openai.org/artifactory/api/npm/npm-public/#https://registry.npmjs.org/#g' package-lock.json
+
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund
 
       - name: Build Vite app
         run: npm run build
